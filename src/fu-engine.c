@@ -2324,11 +2324,9 @@ fu_engine_load_metadata_store (FuEngine *self, FuEngineLoadFlags flags, GError *
 		xb_builder_import_source (builder, source);
 	}
 
-#if LIBXMLB_CHECK_VERSION(0,1,7)
 	/* on a read-only filesystem don't care about the cache GUID */
 	if (flags & FU_ENGINE_LOAD_FLAG_READONLY_FS)
 		compile_flags |= XB_BUILDER_COMPILE_FLAG_IGNORE_GUID;
-#endif
 
 	/* ensure silo is up to date */
 	cachedirpkg = fu_common_get_path (FU_PATH_KIND_CACHEDIR_PKG);
