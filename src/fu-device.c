@@ -751,27 +751,25 @@ fu_device_get_specialized_gtype (FuDevice *self)
 }
 
 static void
+fu_device_quirks_iter_cb (FuQuirks *quirks, const gchar *key, const gchar *value, gpointer user_data)
+{
+	FuDevice *self = FU_DEVICE (user_data);
+	g_autoptr(GError) error = NULL;
+	if (!fu_device_set_quirk_kv (self, key, value, &error)) {
+		if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED)) {
+			g_warning ("failed to set quirk key %s=%s: %s",
+				   key, value, error->message);
+		}
+	}
+}
+
+static void
 fu_device_add_guid_quirks (FuDevice *self, const gchar *guid)
 {
 	FuDevicePrivate *priv = GET_PRIVATE (self);
-	const gchar *key;
-	const gchar *value;
-	GHashTableIter iter;
-
-	/* not set */
 	if (priv->quirks == NULL)
 		return;
-	if (!fu_quirks_get_kvs_for_guid (priv->quirks, guid, &iter))
-		return;
-	while (g_hash_table_iter_next (&iter, (gpointer *) &key, (gpointer *) &value)) {
-		g_autoptr(GError) error = NULL;
-		if (!fu_device_set_quirk_kv (self, key, value, &error)) {
-			if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED)) {
-				g_warning ("failed to set quirk key %s=%s: %s",
-					   key, value, error->message);
-			}
-		}
-	}
+	fu_quirks_lookup_by_id_iter (priv->quirks, guid, fu_device_quirks_iter_cb, self);
 }
 
 /**

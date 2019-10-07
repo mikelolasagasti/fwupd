@@ -4334,10 +4334,10 @@ fu_engine_usb_device_added_cb (GUsbContext *ctx,
 
 
 static void
-fu_engine_load_quirks (FuEngine *self)
+fu_engine_load_quirks (FuEngine *self, FuQuirksLoadFlags quirks_flags)
 {
 	g_autoptr(GError) error = NULL;
-	if (!fu_quirks_load (self->quirks, &error))
+	if (!fu_quirks_load (self->quirks, quirks_flags, &error))
 		g_warning ("Failed to load quirks: %s", error->message);
 }
 
@@ -4522,6 +4522,7 @@ gboolean
 fu_engine_load (FuEngine *self, FuEngineLoadFlags flags, GError **error)
 {
 	FuConfigLoadFlags config_flags = FU_CONFIG_LOAD_FLAG_NONE;
+	FuQuirksLoadFlags quirks_flags = FU_QUIRKS_LOAD_FLAG_NONE;
 	g_autoptr(GPtrArray) checksums = NULL;
 
 	g_return_val_if_fail (FU_IS_ENGINE (self), FALSE);
@@ -4570,7 +4571,10 @@ fu_engine_load (FuEngine *self, FuEngineLoadFlags flags, GError **error)
 	/* load quirks, SMBIOS and the hwids */
 	fu_engine_load_smbios (self);
 	fu_engine_load_hwids (self);
-	fu_engine_load_quirks (self);
+	/* on a read-only filesystem don't care about the cache GUID */
+	if (flags & FU_ENGINE_LOAD_FLAG_READONLY_FS)
+		quirks_flags |= FU_QUIRKS_LOAD_FLAG_READONLY_FS;
+	fu_engine_load_quirks (self, quirks_flags);
 
 	/* load AppStream metadata */
 	if (!fu_engine_load_metadata_store (self, flags, error)) {
