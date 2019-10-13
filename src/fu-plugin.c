@@ -1753,7 +1753,14 @@ fu_plugin_runner_verify (FuPlugin *self,
 	g_module_symbol (priv->module, "fu_plugin_verify", (gpointer *) &func);
 	if (func == NULL) {
 		g_debug ("running superclassed read_firmware() on %s", priv->name);
-		return fu_plugin_device_read_firmware (self, device, error);
+		if (!fu_plugin_device_read_firmware (self, device, &error_local)) {
+			if (g_error_matches (error_local,
+					     FWUPD_ERROR,
+					     FWUPD_ERROR_NOT_SUPPORTED))
+				return TRUE;
+			g_propagate_error (error, error_local);
+			return FALSE;
+		}
 	}
 
 	/* clear any existing verification checksums */
